@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1548071184639.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "231816A8",
+    "lastKnownWriteTime" : 1548071803,
+    "last_content_update" : 1548071803058,
+    "path" : "C:/Users/s11855/OneDrive - Norges Handelshøyskole/Prosjekter/ssb-api-og-shiny/scripts/iniate-project.R",
+    "project_path" : "scripts/iniate-project.R",
+    "properties" : {
+        "cursorPosition" : "13,0",
+        "scrollLine" : "0",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
