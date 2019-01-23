@@ -1,0 +1,14 @@
+---
+title: "readme"
+author: "Andreas Olden"
+date: "January 21, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+Basic structure set up. 
