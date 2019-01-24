@@ -1,0 +1,38 @@
+---
+title: "Loading data from SSB"
+author: "Andreas Olden"
+date: "January 23, 2019"
+output: html_document
+---
+
+API: Application programming interface. Lar deg hente data fra SSB sine databaser rett fra r-konsollen. 
+
+API VS scraping
+for scraping sjekk ut [rvest](https://cran.r-project.org/web/packages/rvest/rvest.pdf)
+Check https://www.ssb.no/_public/skins/advanced/ssb.no/robots.txt
+What is legal?
+
+Different kinds of API
+
+SSB om API generelt: <https://www.ssb.no/omssb/tjenester-og-verktoy/api>
+SSB bruker veiledning: <https://www.ssb.no/omssb/om-oss/nyheter-om-ssb/_attachment/248256?_ts=16833648fd8>
+SSB eksempler på kode: <https://www.ssb.no/omssb/tjenester-og-verktoy/api/px-api/eksempler-pa-kode>
+SSB har lage r-pakken [PxWebApiData](https://cran.r-project.org/web/packages/PxWebApiData/index.html)
+
+[Et litt mer fyldig R-eksempel](http://www.myrland.one/2016/06/07/ssbs-api-for-a-laste-ned-bensin-og-dieseldata/)
+
+I spørringen på “tid” kunne en brukt filteret “all” med verdien “*” i stedet. Da ville figuren oppdatert seg selv med nye månedstall, etter hvert som SSB publiserer dem. kommentar på et litt mer fyldig eksempel. 
+
+https://www.r-bloggers.com/accessing-apis-from-r-and-a-little-r-programming/
+https://www.programmableweb.com/news/how-to-access-any-restful-api-using-r-language/how-to/2017/07/21
+https://cran.r-project.org/web/packages/PxWebApiData/PxWebApiData.pdf
+
+
+SSB Api er restfull
+Anbefaler JSON
+
+##laste data
+flere måter å generere data på
+1. laste ned ferdig datasett
+2. lage data sett og få kode
+3. Skrive kode direkte

@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1548231016203.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3160400276",
+    "id" : "33EAFF79",
+    "lastKnownWriteTime" : 1548238992,
+    "last_content_update" : 1548238992413,
+    "path" : "C:/Users/s11855/OneDrive - Norges Handelshøyskole/Prosjekter/ssb-api-og-shiny/reports/loading_data_ssb_api.Rmd",
+    "project_path" : "reports/loading_data_ssb_api.Rmd",
+    "properties" : {
+        "cursorPosition" : "23,212",
+        "scrollLine" : "14",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

@@ -1,0 +1,7 @@
+"0","table <- fromJSONstat(content(temp, ""text""))"
+"0","df <- table[[1]]"
+"0","p.bensin <- filter(df, petroleumsprodukt==""Bensin, blyfri 95 oktan"")"
+"0","p.diesel <- filter(df, petroleumsprodukt==""Avgiftspliktig diesel"")"
+"0","pbensin <- ts(p.bensin$value, start=1995, frequency = 12)"
+"0","pdiesel <- ts(p.diesel$value, start=1995, frequency = 12)"
+"0","plot(pbensin, ylab=""Kr/liter Bensin, blyfri 95 oktan"")"
