@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1548407585194.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "386397362",
+    "id" : "B09FF7",
+    "lastKnownWriteTime" : 1548432406,
+    "last_content_update" : 1548432406197,
+    "path" : "C:/Users/s11855/OneDrive - Norges Handelshøyskole/Prosjekter/ssb-api-og-shiny/scripts/ssb_queries.R",
+    "project_path" : "scripts/ssb_queries.R",
+    "properties" : {
+        "cursorPosition" : "89,0",
+        "scrollLine" : "66",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 5,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

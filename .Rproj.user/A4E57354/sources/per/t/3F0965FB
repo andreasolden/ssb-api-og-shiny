@@ -1,0 +1,24 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1548407200149.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1793435287",
+    "id" : "3F0965FB",
+    "lastKnownWriteTime" : 1548409795,
+    "last_content_update" : 1548409795893,
+    "path" : "C:/Users/s11855/OneDrive - Norges Handelshøyskole/Prosjekter/ssb-api-og-shiny/reports/gas_prices_example_ssb_api.Rmd",
+    "project_path" : "reports/gas_prices_example_ssb_api.Rmd",
+    "properties" : {
+        "cursorPosition" : "47,25",
+        "last_setup_crc32" : "",
+        "scrollLine" : "0",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

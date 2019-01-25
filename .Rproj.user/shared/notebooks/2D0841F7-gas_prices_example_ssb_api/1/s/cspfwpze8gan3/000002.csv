@@ -91,9 +91,9 @@
 "
 "2","<- Transfer-Encoding: chunked
 "
-"2","<- Date: Wed, 23 Jan 2019 09:55:18 GMT
+"2","<- Date: Fri, 25 Jan 2019 15:05:44 GMT
 "
-"2","<- X-Varnish: 451336267
+"2","<- X-Varnish: 451546606
 "
 "2","<- Age: 0
 "
@@ -107,7 +107,7 @@
 "
 "2","<- X-Backend-Director: ssb_web_pxapi
 "
-"2","<- Set-Cookie: X-Identity=19543189.394; Path=/
+"2","<- Set-Cookie: X-Identity=17741282.037; Path=/
 "
 "2","<- Set-Cookie: PRODdata=ffffffffc2a8b7f645525d5f4f58455e445a4a423660;Version=1;Max-Age=3600;path=/;httponly
 "
