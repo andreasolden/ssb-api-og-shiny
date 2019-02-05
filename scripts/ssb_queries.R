@@ -6,7 +6,7 @@ checkpoint("2019-01-21") #As they were at the date set in this function. i.e "20
 library(here) # allows us to use relative file paths, see readme or simulations doc
 library(httr) #Tools for Working with URLs and HTTP
 library(rjstat) #Read and Write 'JSON-stat' Data Sets
-library(mosaic) #Project MOSAIC Statistics and Mathematics Teaching Utilities
+#library(mosaic) #Project MOSAIC Statistics and Mathematics Teaching Utilities
 library(tidyverse) #For almost everything else :)
 #options(encoding="UTF-8")
 
