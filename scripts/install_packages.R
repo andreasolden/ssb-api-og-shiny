@@ -16,6 +16,7 @@ install.packages("stargazer")
 install.packages("httr") #Tools for Working with URLs and HTTP
 install.packages("rjstats") #Read and Write 'JSON-stat' Data Sets
 install.packages("shiny") #For nice interactive figures
+install.packages("readxl") #For reading Excel files
 
 #If installing directly in a Markdown document with checkpoint make sure to use: 
 #install.packages("httr", repos = "https://mran.microsoft.com/")
