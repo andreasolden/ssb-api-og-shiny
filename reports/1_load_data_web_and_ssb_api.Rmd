@@ -1,8 +1,10 @@
 ---
-title: "R Notebook"
+title: "Extracting data from SSB API"
 author: "Andreas Olden and Erling Risa"
 date: "January 23, 2019"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
@@ -15,13 +17,14 @@ knitr::opts_chunk$set(echo = TRUE)
 #Load all relevant packages.
 library("checkpoint") #Checkpoint assures us that we use the same package versions
 checkpoint("2019-01-21") #As they were at the date set in this function. i.e "2019-01-21"
-library(here) # allows us to use relative file paths, see readme or simulations doc
 library(httr) #Tools for Working with URLs and HTTP
 library(rjstat) #Read and Write 'JSON-stat' Data Sets
 library(readxl) #reading excel-files
-library(stargazer) #For summary statistics
+library(tidyverse) #For data wrangling
+library(here) # allows us to use relative file paths, see readme or simulations doc
+
 ```
-##Introduction
+# Introduction ####
 
 This is the first document on a series on how to make interactive figures and tables using Shiny apps and dashboards, using the Statistics Norway (SSB) API and other online sources. We have done our utmost to keep all sources in English, but let us know if you find mistakes. It is also easy to get the Norwegian sources by removing /en/ in SSB links. 
 
@@ -35,11 +38,11 @@ We will use 4 datasets. The three first datasets are from the Statistics Norway 
 
 ##Data from SSB
 There are several ways to access data from Statistics Norway. The first option is to go through their statistics database [StatBank](https://www.ssb.no/en/statbank). This is sometimes a good place to start looking for data. Second, you can use their API <https://www.ssb.no/en/omssb/tjenester-og-verktoy/api>. The API allows for much more flexibility in generating datasets, as well as it is a good way to get the newest numbers, you simply have to re-run your code. A final convenient resource is the SSB archive of official classifications, available at <https://www.ssb.no/en/klass/>. 
- 
 
-If navigate to the API through the previous link, choose 'API: Create your own datasets'. Note that the documentation in the API is somewhat scarce, so we reccomend viewing the data in the StatBank first. The third and final useful resource is the official classification lists of SSB, available at: <https://www.ssb.no/en/klass/>. 
 
-####First dataset (10594)
+If navigate to the API through the previous link, choose 'API: Create your own datasets'. Note that the documentation in the API is somewhat scarce, so we reccomend viewing the data in the StatBank first.
+
+### First dataset (10594) on unemployment ####
 
 Allright, navigate to the API page <https://www.ssb.no/en/omssb/tjenester-og-verktoy/api>. Choose 'API: Create your own datasets' and you will see the API console. If you type in three characters, autofill will provide you with relevant suggestions. Let us input the identifier '10594' to get the numbers on unemployment. This should result in the console looking as below. 
 
@@ -66,43 +69,43 @@ The first thing we want to chage is the region. We are only interested in Oslo, 
 
 The code for choosing regions looks by default like: 
 
-      "code": "Region",
-      "selection": {
+        "code": "Region",
+        "selection": {
         "filter": "item",
         "values": [
-          "0",
-          "01",
-          "0101",
-          "99",
-          "9999"
+        "0",
+        "01",
+        "0101",
+        "99",
+        "9999"
         ]
-      }
-      
+        }
+
 We want to replace that with our regions: 
 
-      "code": "Region",
-      "selection": {
+        "code": "Region",
+        "selection": {
         "filter": "item",
         "values": [
-          "0301",
-          "1103",
-          "1201",
-          "1601"
+        "0301",
+        "1103",
+        "1201",
+        "1601"
         ]
-      }
+        }
 
 Further, by default SSB only gives us five time-observations, but we want all of them. The default part of the code looks like: 
 
-      "selection": {
+        "selection": {
         "filter": "item",
         "values": [
-          "1990M01",
-          "1990M02",
-          "1990M03",
-          "2017M11",
-          "2018M11"
+        "1990M01",
+        "1990M02",
+        "1990M03",
+        "2017M11",
+        "2018M11"
         ]
-      }
+        }
 
 Now to get all observations, we change filter from "item" to "all" and use "*" in the values part. This changes the code to: 
 
@@ -175,7 +178,7 @@ query_10594 <- '
 
 #POST send the query to the URL provided. We store the results in temp        
 temp <- POST(url_10594 , body = query_10594, encode = "json", verbose())
-#use: ', verbose()' to see what goes on under the hood, alternatively:
+#We use verbose() to see what goes on under the hood. 
 #str(temp) #Is useful to see what comes back
 
 # create dataframe of results by using fromJSONstat which extracts the results 
@@ -183,33 +186,18 @@ df_10594 <- fromJSONstat(content(temp, as ="text"), use_factors = TRUE)
 
 ```
 
-And that's it! Note the output states that HTTP/1.1 200 OK, which means the extration was succesful. You now have a dataframe will all the specified data. Let us now take a look at the data we have loaded. 
+And that's it! Note the output states that HTTP/1.1 200 OK, which means the extration was succesful. You now have a dataframe will all the specified data. Let us now save the data in the folder data/raw
 
 ```{r}
-str(df_10594)
 
-#Let us then take a look at the missing values
-df_10594[is.na(df_10594$value),]
+saveRDS(df_10594, file = here("data/raw", "df_10594.rds"))
 
 ```
 
-By extracting the rows with missing values we see that there are three of them. They are all from Trondheim and in 2018. This is due to the previous issue of Trondheim being classified both as 1601 and 5001. We have however looked at the StatBank and know their true numbers and will replace them. This is a bith hacky and normally we would merge the two tables, but to save some code we will do it simple. 
 
-```{r}
-df_10594$value[df_10594$region == "Trondheim (-2017)" & df_10594$sex == "Both sexes" & df_10594$month == "2018M11"] <- 2076
-df_10594$value[df_10594$region == "Trondheim (-2017)" & df_10594$sex == "Males" & df_10594$month == "2018M11"] <- 1214
-df_10594$value[df_10594$region == "Trondheim (-2017)" & df_10594$sex == "Females" & df_10594$month == "2018M11"] <- 862
- 
-#Save raw data
-#saveRDS(df_10594, file = here("data/raw", "df_10594.rds"))
-```
+### Second dataset 07459: Population, by sex and one-year age groups ####
 
-
-
-#### Second dataset 07459: Population, by sex and one-year age groups
-
-There are alternatives to copy pasting the query, for instance by downloading the JSON file from the console. Some people might also like the code more condensed (which you will find in the JSON file). However, you might want to look into code-folding or separating the code into multiple files and source it instead. Nevertheless, the code below comes from the downloaded JSON-file and is more condensed. Instead of copy paste this can be done by: fromJSON(file = "downloadedfile.json") 
-
+There are alternatives to copy pasting the query, for instance by downloading the JSON file from the console. Some people might also like the code more condensed (which you will find in the JSON file). However, you might want to look into code-folding or separating the code into multiple files and source it instead. Nevertheless, the code below comes from the downloaded JSON-file and is more condensed. Instead of copy paste this can be done by: fromJSON(file = "downloadedfile.json") if file is downloaded. 
 
 Remember filtering for region and time period, as well as age (alder)
 
@@ -233,21 +221,12 @@ temp <- POST(url_07459 , body = data_07459, encode = "json")
 # create dataframe by using fromJSONstat which extracts the results 
 df_07459 <- fromJSONstat(content(temp, as ="text"), use_factors = TRUE)
 
-#Find missing values
-missing_df <- df_07459[is.na(df_07459$value),]
-missing_df
-
-#No missing
-
-#Finally, let us save the raw data 
-
-#saveRDS(df_07459, file = here("data/raw", "df_07459.rds"))
-
+saveRDS(df_07459, file = (here("data/raw", "df_07459.rds")))
 
 ```
 
 
-#### Third dataset 06726: Transfers of dwelling properties with building, free market sale, by number, purchase price and average purchase 
+### Third dataset 06726: Transfers of dwelling properties with building, free market sale, by number, purchase price and average purchase ###
 
 Remember filtering on region and time period. Also, the variable "GjSum" (average sum) has a lot of missing and can be calculated by the two other variables, so we remove it. 
 
@@ -271,20 +250,11 @@ temp <- POST(url_06726 , body = data_06726, encode = "json")
 # create dataframe by using fromJSONstat which extracts the results 
 df_06726 <- fromJSONstat(content(temp, as ="text"), use_factors = TRUE)
 
-#Find missing values
-missing_df <- df_06726[is.na(df_06726$value),]
-missing_df
-
-#No missing
-
-#Finally, let us save the raw data 
-
-#saveRDS(data_06726, file = here("data/raw", "data_06726.rds"))
-
+saveRDS(df_06726, file = here("data/raw", "df_06726.rds"))
 
 ```
 
-#### Fourth dataset
+### Fourth dataset ####
 
 The Europe Brent Spot Price FOB can be downloaded as an Excel-file from <https://www.eia.gov/dnav/pet/hist/LeafHandler.ashx?n=PET&s=RBRTE&f=M>. However, there is an easier way. By copying the link-file (not the one above), using the GET command we can load it directly from R. If the file us updated, we can simply run the code for the newest numbers. 
 
@@ -293,16 +263,11 @@ The Europe Brent Spot Price FOB can be downloaded as an Excel-file from <https:/
 GET("https://www.eia.gov/dnav/pet/hist_xls/RBRTEm.xls", write_disk(tf <- tempfile(fileext = ".xls")))
 
 df_europe_brent_spot <- read_excel(tf,
-                 col_names = c("date","price"), #Set custom col-names as we load without
-                 skip=3, #Skip the top three rows as they are info and messes with format
-                 sheet = "Data 1") # Set sheet to where data is
-str(df_europe_brent_spot)
+                                   col_names = c("date","price"), #Set custom col-names as we load without
+                                   skip=3, #Skip the top three rows as they are info and messes with format
+                                   sheet = "Data 1") # Set sheet to where data is
+
+saveRDS(df_europe_brent_spot, file = here("data/raw", "df_europe_brent_spot.rds"))
 
 ```
-
-
-
-
-
-
 

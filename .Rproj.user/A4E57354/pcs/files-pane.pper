@@ -1,5 +1,5 @@
 {
-    "path" : "~/prosjekter/ssb-api-og-shiny/reports",
+    "path" : "~/prosjekter/ssb-api-og-shiny/data/processed",
     "sortOrder" : [
         {
             "ascending" : true,

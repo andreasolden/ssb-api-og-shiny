@@ -1,0 +1,198 @@
+---
+title: "Cleaning data from SSB API"
+author: "Andreas Olden and Erling Risa"
+date: "January 23, 2019"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+#Set default option of code-block to show code. 
+#include=FALSE makes it not show up in html-notebook. 
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r libraries, include=FALSE}
+#Load all relevant packages.
+options(scipen=10000)
+library("checkpoint") #Checkpoint assures us that we use the same package versions
+checkpoint("2019-01-21") #As they were at the date set in this function. i.e "2019-01-21"
+library(tidyverse) #For data wrangling
+library(here) # allows us to use relative file paths, see readme or simulations doc
+library(skimr) #For nice summary statistics
+```
+
+# Loading the data ####
+
+```{r load data}
+df_10594 <- readRDS(here("data/raw", "df_10594.rds"))
+df_07459 <- readRDS(here("data/raw", "df_07459.rds"))
+df_06726 <- readRDS(here("data/raw", "df_06726.rds"))
+df_europe_brent_spot <- readRDS(here("data/raw", "df_europe_brent_spot.rds"))
+```
+
+# Looking, diagnozing and cleaning data ####
+
+### 10594 unemployment ####
+
+Let us start out by taking a look at the data frame, missing values and the regions
+
+```{r show raw unemployment data}
+skim(df_10594) #Show nice summary stats
+df_10594[is.na(df_10594$value),] #To locate and show the missing values 
+unique(df_10594$region) #To show all the regions
+```
+
+Allright. The data consists of five variables: region, sex, contents, month and value, all are unordered factors, except for value, which is integer. There are aslo 4 regions, Oslo muni, Stavanger, Bergen and Trondheim (-2017). There are also three missing values, all from Trondheim in 2018, despite the fact that the data states -2017. This is due to the previous issue of Trondheim being classified as 1601 and 5001 and presumably a mistake by SSB. By looking at the relevant table in the Statbank <https://www.ssb.no/statbank/table/10594> we could replace them or merge the variables. However, since the housing price data only runs from 1992-2017 we will only use this time period and not have to deal with it.  
+
+We want to clean the data a bit as well. The contents variable is simply a description of the value variable and we want to rename the value-variable to reg_unemployed and drop the contents variable, as well as make it numeric rather than integer. Further we want to rename 'month' as date and recode it as a date format. Then, we will change the factor levels so that Oslo municipality is only called Oslo, and Trondheim (-2017) is only called Trondheim. Finally, we will filter the time periods so that we only have observations from 1992-2017. Several of these steps will be used for several of the datasets. 
+
+
+```{r process unemployment data}
+df_10594 <- df_10594 %>% 
+        mutate( date = lubridate::parse_date_time(month, "ym"),
+                region = fct_recode(region, 
+                                    Oslo = "Oslo municipality",
+                                    Trondheim = "Trondheim (-2017)"),
+                value = as.numeric(value)) %>%
+        rename( reg_unemployed = value) %>%
+        select(-c(month, contents)) %>%
+        filter(date >= as.Date("1992-01-01") & date < as.Date("2018-01-01"))
+
+saveRDS(df_10594, file = here("data/processed", "df_unemployment.rds"))
+```
+
+And let us take a new look at the data
+
+```{r view and plot processed unemployment data}
+skim(df_10594)
+
+ggplot(subset(df_10594, sex == "Both sexes"), aes(x = date, y = reg_unemployed, colour = region)) + geom_point(aes(shape = region)) + geom_line()
+
+```
+
+
+
+### 07459 Population by region, age and gender ####
+
+```{r view raw population data}
+skim(df_07459)
+unique(df_07459$region)
+```
+
+Allright, at least there were no missing values this time. There are six variables: age, contents, region, sex, year and value. We want to drop the contents variable, rename two of the regions and rename and recode year as a date format. 
+
+```{r process population data}
+df_07459 <- df_07459 %>% 
+        mutate( date = lubridate::parse_date_time(year, "y"),
+                region = fct_recode(region, 
+                                    Oslo = "Oslo municipality",
+                                    Trondheim = "Trondheim (-2017)"),
+                value = as.numeric(value)) %>%
+        rename( population_size = value) %>%
+        select(-c(year, contents)) %>%
+        filter(date >= as.Date("1992-01-01") & date < as.Date("2018-01-01"))
+
+saveRDS(df_07459, file = here("data/processed", "df_population.rds"))
+
+```
+
+Let's take a look:
+
+```{r view processed population data}
+skim(df_07459)
+
+```
+
+### 06726 housing prices by number and total value by region ####
+
+```{r show raw housing price data}
+skim(df_06726) #Show nice summary stats
+df_06726[is.na(df_06726$value),] #To locate and show the missing values 
+unique(df_06726$region) #To show all the regions
+```
+Which again reminds us of previous data. Let us rename the value-variable, rename and recode the year as date, reanme the regions. On top of that we want to create an average housing values by dividing the total value of transfers by the transfer volume. 
+
+```{r process housing prices data}
+
+df_06726 <- df_06726 %>% 
+        spread( key = contents, value = value)  %>% 
+        rename( home_transfers = "Transfers (number)", trans_val_in_1000 = "Total purchase prise (1 000 NOK)") %>% 
+        mutate( home_transfers = as.numeric(home_transfers),
+                trans_val_in_1000 = as.numeric(trans_val_in_1000),
+                ave_home_price = (trans_val_in_1000 / home_transfers)*1000,
+                date = lubridate::parse_date_time(year, "y"),
+                region = fct_recode(region, 
+                                    Oslo = "Oslo municipality",
+                                    Trondheim = "Trondheim (-2017)")) %>% 
+        select(-c(year))
+
+saveRDS(df_06726, file = here("data/processed", "df_home_values.rds"))
+
+```
+
+Let's take a look: 
+
+```{r view processed housing data}
+skim(df_06726)
+
+ggplot (df_06726, aes(x = date, y = ave_home_price, colour = region )) + geom_line() + geom_point(aes(shape=region))
+```
+
+
+### The Europe Brent Spot Price ####
+
+```{r view raw oil prices}
+skim(df_europe_brent_spot)
+
+```
+
+And then some filtering 
+
+```{r process oil prices}
+df_europe_brent_spot <- df_europe_brent_spot %>%
+        filter(date >= as.Date("1992-01-01") & date < as.Date("2018-01-01"))
+
+saveRDS(df_europe_brent_spot, file = here("data/processed", "df_brent_oil_price.rds"))
+
+```
+
+And we are good to go. Let's take a look: 
+
+```{r}
+
+ggplot (df_europe_brent_spot, aes(x = date, y = price)) + geom_line() + geom_point()
+
+ggplot (df_europe_brent_spot, aes(x = date, y = log(price))) + geom_line() + geom_point()
+```
+
+# If we want the data as a single data frame
+
+```{r}
+df_unemployment <- readRDS(here("data/processed", "df_unemployment.rds"))
+df_population <- readRDS(here("data/processed", "df_population.rds"))
+df_home_values <- readRDS(here("data/processed", "df_home_values.rds"))
+df_brent_oil_price <- readRDS(here("data/processed", "df_brent_oil_price.rds"))
+```
+
+```{r}
+str(df_unemployment)
+str(df_population)
+str(df_home_values)
+str(df_brent_oil_price)
+
+#df_brent_oil_price <- df_brent_oil_price %>%
+
+x <- tibble(i = c("a","b","c"), j = 1:3)
+
+#Make them long?
+#join: full? 
+#match on region and date. 
+#Becomes wide, transform to long? seems easiest. 
+#ADD region to oil prices. 
+        
+
+```
+
+
+
+
