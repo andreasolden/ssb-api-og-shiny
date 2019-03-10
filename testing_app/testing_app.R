@@ -19,8 +19,8 @@ library(readr) #To do some text stuff
 library(DT) #For data table
 
 #Read data frames
-df_joined_long <- readRDS("data/df_joined_long.rds")
-#df_joined_wide <- readRDS(here("data/processed", "df_joined_long.rds"))
+df_joined_long <- readRDS(here("data/processed", "df_joined_long.rds"))
+#df_joined_wide <- readRDS(here("data/processed", "df_joined_wide.rds"))
 
 ################################################################################
 
@@ -115,7 +115,7 @@ ui <- fluidPage(
                                     
                                     #Third tab for references and text
                                     tabPanel("References",
-                                             h5("Full references will be provided at my website www.AndreasOlden.com and https://github.com/AndreasOlden"))# , add content
+                                             h3("Add some text"))# , add content
                         )# End of tabsetPanel
                 )#End of main panel
                 
@@ -152,8 +152,8 @@ server <- function(input, output) {
                                 subset_age = ifelse( contents == "inhabitants", paste(input$age_range[1],"-",input$age_range[2]), NA)
                         )
                 df_sub
-                
-                
+                 
+           
         })
         
         # PLOTTING MAIN FIGURE

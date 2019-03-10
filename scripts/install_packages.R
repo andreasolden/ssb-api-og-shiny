@@ -23,3 +23,10 @@ install.packages("skimr") #For nice summary statistics
 #install.packages("httr", repos = "https://mran.microsoft.com/")
 
 #If you face any issues at all, above code will fix it. 
+
+#Shiny and its dependencies
+install.packages("shiny")
+install.packages("plotly")
+install.packages("shinythemes")
+install.packages("DT")
+install.packages("shinyWidgets")

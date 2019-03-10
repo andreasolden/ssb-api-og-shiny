@@ -1,0 +1,12 @@
+name: ssb_api
+title: ssb_api
+username:
+account: andreas-olden
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 779133
+bundleId: 1928833
+url: https://andreas-olden.shinyapps.io/ssb_api/
+when: 1552235747.41207
+asMultiple: FALSE
+asStatic: FALSE

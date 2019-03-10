@@ -52,7 +52,7 @@ The contents variable provides a description of the value variable. The contents
 
 ```{r process unemployment data}
 
-df_10594 <- df_10594 %>% 
+df_unemployment <- df_10594 %>% 
         mutate( contents = fct_recode(contents, 
                                       reg_unemployed = "Unemployed persons registered at the Employment Offices"),
                 date = lubridate::parse_date_time(month, "ym"),
@@ -66,15 +66,15 @@ df_10594 <- df_10594 %>%
         select(-month) %>%
         filter(date >= as.Date("1992-01-01") & date < as.Date("2018-01-01"))
         
-saveRDS(df_10594, file = here("data/processed", "df_unemployment.rds"))
+saveRDS(df_unemployment, file = here("data/processed", "df_unemployment.rds"))
 ```
 
 Let's take a new look at the data
 
 ```{r view and plot processed unemployment data}
-skim(df_10594)
+skim(df_unemployment)
 
-ggplot(subset(df_10594, sex == "Population"), aes(x = date, y = value, colour = region)) + geom_point(aes(shape = region)) + geom_line()
+ggplot(subset(df_unemployment, sex == "Population"), aes(x = date, y = value, colour = region)) + geom_point(aes(shape = region)) + geom_line()
 
 ```
 
@@ -90,17 +90,77 @@ unique(df_07459$region)
 
 This time we have six variables: age, contents, region, sex, year and value. There are no mising values, but there are a lot of zero values for the population, which can be correct (no 110 year olds in a given year), but it can also be missing, which in fact is the case for Trondheim in 2018. Luckily, we are not going to use 2018 so we do not have to worry about it. 
 
-We also see that we only have two sexes, males and females. We will transform the data to wide format to easily sum up the two to get the total population numbers. Then we will gather the data so that it is in the usual long format. We will then recode the factor level in contents from Persons to Inhabitants, then recode the region factor levels as previously, and recode the value variable as numeric. This time the observational level is year. We will recode it as a date, but the default option in R is to use 1st of January in this case. As it is a yearly average both the start and the end of the year seems like strange choices. Hence, we will add 183 days to the date to get roughly in the middle of the year. Then we will filter the data and save it in processed data. 
+We also see that we only have two sexes, males and females. We will transform the data to wide format to easily sum up the two to get the total population numbers. Then we will gather the data so that it is in the usual long format. We will then recode the factor level in contents from Persons to inhabitants, then recode the region factor levels as previously, and recode the value variable as numeric. This time the observational level is year. We will recode it as a date, but the default option in R is to use 1st of January in this case. As it is a yearly average both the start and the end of the year seems like strange choices. Hence, we will add 183 days to the date to get roughly in the middle of the year. We also will save the age variable as numeric for easy filtering later, ignoring the fact that '105 or older' is not only 105 year olds, because they are not really that interesting for our analytic purposes. Then we will filter the data and save it in processed data. 
 
 ```{r process population data}
 #Create for total population using spread
 
-df_07459 <- df_07459 %>% 
+df_population <- df_07459 %>% 
         spread( key = sex, value = value) %>%
         mutate( Population = Males + Females) %>%
         gather( key = "sex", value = "value", Males, Females, Population) %>%
         mutate( contents = fct_recode(contents,
-                                      Inhabitants = "Persons"),
+                                      inhabitants = "Persons"),
+                region = fct_recode(region, 
+                                    Oslo = "Oslo municipality",
+                                    Trondheim = "Trondheim (-2017)"),
+                value = as.numeric(value),
+                sex = as.factor(sex),
+                date = (lubridate::parse_date_time(year, "y") + lubridate::days(183)),
+                age = parse_number(as.character(age))
+                ) %>%
+        select(-year) %>%
+        filter(date >= as.Date("1992-01-01") & date < as.Date("2018-01-01"))
+        
+saveRDS(df_population, file = here("data/processed", "df_population.rds"))
+
+```
+
+Let's take a look:
+
+```{r view processed population data}
+
+skim(df_population)
+
+```
+
+### Age cohorts ####
+
+We might also like a version that does not include all age groups, but rather age intervals. We will use the raw data som that we can reuse the code from the previous data processing of population numbers. 
+
+```{r}
+
+df_population_cohorts <- df_07459 %>%
+        mutate(
+                age = as.numeric(age) - 1, #factor default level is 1 not zero, but age can be zero
+                age = ifelse(age %in%  0:19, "under_20",
+                            ifelse(age %in% 20:29, "20s",
+                            ifelse(age %in% 30:39, "30s",
+                            ifelse(age %in% 40:49, "40s",
+                            ifelse(age %in% 50:59, "50s",
+                            ifelse(age %in% 60:69, "60s", 
+                            ifelse(age  >=  70   , "over_69", "Missing"   ))))))),
+                age = factor(age, levels = c("under_20", "20s", "30s", "40s", "50s", "60s", "over_69" ) )
+                ) %>%
+        group_by(region, sex, age, contents, year) %>%
+        summarise(value = sum(value)) %>%
+        ungroup()
+        
+str(df_population_cohorts)
+unique(df_population_cohorts$age)
+#It is also smart to check the aggreagation by comparing with the Statbank
+
+```
+
+Now we can literally paste the previous code in and only change names of objects
+
+```{r}
+df_population_cohorts <- df_population_cohorts %>% #Here
+        spread( key = sex, value = value) %>%
+        mutate( Population = Males + Females) %>%
+        gather( key = "sex", value = "value", Males, Females, Population) %>%
+        mutate( contents = fct_recode(contents,
+                                      inhabitants = "Persons"),
                 region = fct_recode(region, 
                                     Oslo = "Oslo municipality",
                                     Trondheim = "Trondheim (-2017)"),
@@ -111,17 +171,10 @@ df_07459 <- df_07459 %>%
         select(-year) %>%
         filter(date >= as.Date("1992-01-01") & date < as.Date("2018-01-01"))
         
-saveRDS(df_07459, file = here("data/processed", "df_population.rds"))
-
+saveRDS(df_population_cohorts, file = here("data/processed", "df_population_cohorts.rds")) # And here
 ```
 
-Let's take a look:
 
-```{r view processed population data}
-
-skim(df_07459)
-
-```
 
 ### 06726 housing prices by number and total value by region ####
 
@@ -136,41 +189,40 @@ The contents variable has two pieces, transfers and total value. We want the ave
 
 ```{r process housing prices data}
 
-df_06726 <- df_06726 %>%
+df_home_values <- df_06726 %>%
         spread( key = contents, value = value) %>%
         rename( home_transfers = "Transfers (number)", trans_val_in_1000 = "Total purchase prise (1 000 NOK)") %>% 
         mutate( ave_home_price = (trans_val_in_1000 / home_transfers)*1000 ) %>%
         gather( key = "contents", value = "value", home_transfers, trans_val_in_1000, ave_home_price, factor_key = TRUE ) %>%
         mutate(
                 region = fct_recode(region, 
-                                    Norway = "The whole country",
                                     Oslo = "Oslo municipality",
                                     Trondheim = "Trondheim (-2017)"),
                 date = (lubridate::parse_date_time(year, "y") + lubridate::days(183))
         ) %>%
         select(-year) %>%
-        filter(date >= as.Date("1992-01-01") & date < as.Date("2018-01-01"))
+        filter(date >= as.Date("1992-01-01") & date < as.Date("2018-01-01") & region != "The whole country")
         
-saveRDS(df_06726, file = here("data/processed", "df_home_values.rds"))
+saveRDS(df_home_values, file = here("data/processed", "df_home_values.rds"))
 
 ```
 
 Let's take a look: 
 
 ```{r view processed housing data}
-skim(df_06726)
+skim(df_home_values)
 
 #The total transfer value for the four cities in log-scale
-ggplot (subset(df_06726, contents == "trans_val_in_1000"  & region != "Norway"), aes(x = date, y = log(value), colour = region )) + geom_line() + geom_point(aes(shape=region))
+ggplot (subset(df_home_values, contents == "trans_val_in_1000"), aes(x = date, y = log(value), colour = region )) + geom_line() + geom_point(aes(shape=region))
 
 #The number of home transfers in the four cities in log-scale
-ggplot (subset(df_06726, contents == "home_transfers" & region != "Norway"), aes(x = date, y = log(value), colour = region )) + geom_line() + geom_point(aes(shape=region))
+ggplot (subset(df_home_values, contents == "home_transfers"), aes(x = date, y = log(value), colour = region )) + geom_line() + geom_point(aes(shape=region))
 
 #The average home values in the four cities in log-scale
-ggplot (subset(df_06726, contents == "ave_home_price"  & region != "Norway"), aes(x = date, y = log(value), colour = region )) + geom_line() + geom_point(aes(shape=region))
+ggplot (subset(df_home_values, contents == "ave_home_price"), aes(x = date, y = log(value), colour = region )) + geom_line() + geom_point(aes(shape=region))
 
 #The average home value for the four cities in levels
-ggplot (subset(df_06726, contents == "ave_home_price"  & region != "Norway"), aes(x = date, y = value, colour = region )) + geom_line() + geom_point(aes(shape=region))
+ggplot (subset(df_home_values, contents == "ave_home_price"), aes(x = date, y = value, colour = region )) + geom_line() + geom_point(aes(shape=region))
 
 ```
 
@@ -182,16 +234,16 @@ skim(df_europe_brent_spot)
 
 ```
 
-This data frame does not having any missing values and two variables, price and date. We want to rename the price variable as value, and create a contents variable called oil_prices. Finally we will add region (Norway), even though that is not technically correct. Finally we will filter the data and save it.  
+This data frame does not having any missing values, and two variables, price and date. We want to rename the price variable as value, and create a contents variable called oil_prices. Finally we will add region (all), since it is valud for all places. Finally we will filter the data and save it.  
 
 ```{r process oil prices}
-df_europe_brent_spot <- df_europe_brent_spot %>%
+df_oil_price <- df_europe_brent_spot %>%
         rename( value = price) %>%
         mutate( contents = as.factor("oil_price"),
-                region = as.factor("Norway") ) %>%
+                region = "all") %>%
         filter(date >= as.Date("1992-01-01") & date < as.Date("2018-01-01"))
 
-saveRDS(df_europe_brent_spot, file = here("data/processed", "df_brent_oil_price.rds"))
+saveRDS(df_oil_price, file = here("data/processed", "df_oil_price.rds"))
 
 ```
 
@@ -199,9 +251,9 @@ And we are good to go. Let's take a look:
 
 ```{r}
 #Oil prices in levels
-ggplot (df_europe_brent_spot, aes(x = date, y = value)) + geom_line() + geom_point()
+ggplot (df_oil_price, aes(x = date, y = value)) + geom_line() + geom_point()
 #Oil prices in log(value)
-ggplot (df_europe_brent_spot, aes(x = date, y = log(value))) + geom_line() + geom_point()
+ggplot (df_oil_price, aes(x = date, y = log(value))) + geom_line() + geom_point()
 ```
 
 # Putting it all in a single data frame ####
@@ -211,33 +263,58 @@ Let us first read in the saved data frames in case we ever want to work only on 
 ```{r}
 df_unemployment <- readRDS(here("data/processed", "df_unemployment.rds"))
 df_population <- readRDS(here("data/processed", "df_population.rds"))
+df_population_cohorts <- readRDS(here("data/processed", "df_population_cohorts.rds"))
 df_home_values <- readRDS(here("data/processed", "df_home_values.rds"))
-df_brent_oil_price <- readRDS(here("data/processed", "df_brent_oil_price.rds"))
+df_oil_price <- readRDS(here("data/processed", "df_oil_price.rds"))
 ```
 
 Then we use the full_join from Dplyr to pipe the datasets together and save it. 
 
 ```{r}
 
-df_joined_data <- full_join(df_unemployment, df_population) %>%
+df_joined_long <- full_join(df_unemployment, df_population) %>%
         full_join(., df_home_values) %>%
-        full_join(., df_brent_oil_price ) %>%
+        full_join(., df_oil_price ) %>%
         mutate(region = as.factor(region),
                sex = as.factor(sex),
                contents = as.factor(contents))
 
-saveRDS(df_joined_data, file = here("data/processed", "df_joined_data.rds"))
+saveRDS(df_joined_long, file = here("data/processed", "df_joined_long.rds"))
 
 ```
 And take a look: 
 
 ```{r}
-skim(df_joined_data)
+skim(df_joined_long)
 
-unique(df_joined_data$region)
-unique(df_joined_data$sex)
-unique(df_joined_data$contents)
+unique(df_joined_long$region)
+unique(df_joined_long$sex)
+unique(df_joined_long$contents)
 ```
 
 And that's it. We can now create our app. Note that there are now many missing values, which is completely natural. Oil prices, house prices and unemployment numbers do not have an age, and the same argument goes for sex. Happily, we see that contents, region and value, which should not have any missing values, do not have any missing values. 
+
+### Alternative wide format with age cohorts ####
+
+We might also want ot have a wide-format version of the data. FOr this we will use age-cohorts as well. Let's start out by re-using the previous code, but changing to cohort age data frame.  
+
+```{r}
+
+df_joined_wide <- full_join(df_unemployment, df_population_cohorts) %>% #One change here
+        full_join(., df_home_values) %>%
+        full_join(., df_oil_price ) %>%
+        mutate(region = as.factor(region),
+               sex = as.factor(sex),
+               contents = as.factor(contents)) %>%
+        spread(key = contents, value = value) #And add this line
+
+saveRDS(df_joined_wide, file = here("data/processed", "df_joined_wide.rds"))
+
+
+str(df_joined_wide)
+
+```
+
+
+
 
